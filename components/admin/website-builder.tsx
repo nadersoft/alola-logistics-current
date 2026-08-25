@@ -121,7 +121,8 @@ export function WebsiteBuilder({
                   <TableRow key={p.id}>
                     <TableCell><GripVerticalIcon className="size-4 text-muted-foreground" /></TableCell>
                     <TableCell>
-                      {p.logoUrl ? <img src={normalizeLogoUrl(p.logoUrl)} alt={p.name} className="h-8 w-auto object-contain" /> : <span className="text-xs text-muted-foreground">No logo</span>}
+                      //{p.logoUrl ? <img src={normalizeLogoUrl(p.logoUrl) ?? ""} alt={p.name} className="h-8 w-auto object-contain" /> : <span className="text-xs text-muted-foreground">No logo</span>}
+                    
                     </TableCell>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="text-muted-foreground">
