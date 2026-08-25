@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 
 export async function markNotificationRead(id: string): Promise<{ ok: boolean }> {
   const session = await auth();

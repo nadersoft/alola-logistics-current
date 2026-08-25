@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getVoyages } from "@/lib/actions/voyages";
 import { VoyageManager, type PortOption } from "@/components/admin/voyage-manager";

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { getCustomerTracking } from "@/lib/actions/customer-tracking";
 import { CustomerTrackingTable } from "@/components/admin/customer-tracking-table";
 

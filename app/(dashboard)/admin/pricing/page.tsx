@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { runSmartGuard, guardHealthBadge } from "@/lib/engine/smartGuard";
 import { PricingMatrix, type RuleRow, type FieldRow, type PortOption, type AlertRow, type GuardReport } from "@/components/admin/pricing-matrix";

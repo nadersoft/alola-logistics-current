@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { Category } from "@prisma/client";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { setSetting } from "@/lib/settings";
 import type { Locale } from "@/lib/i18n";
 

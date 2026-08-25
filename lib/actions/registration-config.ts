@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { audit, logger } from "@/lib/log";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 
 export type RegistrationConfigResult = { ok: boolean; error?: string };
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { logger } from "@/lib/log";
 
 export type DocTemplateActionResult = { ok: boolean; error?: string };

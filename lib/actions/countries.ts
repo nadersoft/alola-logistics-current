@@ -5,7 +5,7 @@ import { PortType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { audit } from "@/lib/log";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 
 function isOps(role?: string | null) {
   return role === "SUPER_ADMIN" || role === "MANAGER";

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getSettingOr } from "@/lib/settings";
 import { audit, logger } from "@/lib/log";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import {
   airChargeable,
   convert,

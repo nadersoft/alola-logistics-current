@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { getAllSettings } from "@/lib/settings";
 import { toSettingMap } from "@/lib/theme";
 import { isEncrypted } from "@/lib/crypto";
