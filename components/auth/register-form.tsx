@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { sendOtp, verifyOtpAndRegister } from "@/auth";
+import { sendOtp, verifyOtpAndRegister } from "@/lib/auth";
 import { COUNTRIES_PHONE, DEFAULT_COUNTRY_CODE } from "@/lib/data/countries-with-phone";
 
 const PROVIDER_LABEL: Record<string, string> = {
