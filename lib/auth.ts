@@ -4,7 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { signIn } from "@/auth";
+import { signIn } from "@/lib/auth";
 import { audit, logger } from "@/lib/log";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { OTP_MAX_ATTEMPTS, deliverEmailOtp, deliverOtp, normalizePhone, persistOtp } from "@/lib/otp";
