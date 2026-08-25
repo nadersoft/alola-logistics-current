@@ -7,7 +7,7 @@ import { getString, toSettingMap } from "@/lib/theme";
 import { normalizeLocale } from "@/lib/i18n";
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { AppTopbar } from "@/components/shell/app-topbar";
-//import { SessionTimeoutWatcher } from "@/components/auth/session-timeout-watcher";
+
 import { DeveloperFab } from "@/components/admin/developer-fab";
 
 import type { BellNotification } from "@/components/shell/notification-bell";
@@ -46,7 +46,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-svh overflow-hidden bg-background text-foreground">
-    //  <SessionTimeoutWatcher />
+
       <DeveloperFab />
       <AppSidebar
         companyName={companyName}
