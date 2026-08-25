@@ -1,0 +1,880 @@
+// Prisma schema for Alola Logistics Platform
+// Core principle: ZERO hardcoded values — business config lives in SystemSetting/DB.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  SUPPORT
+  CLIENT
+}
+
+enum Mode {
+  FCL
+  LCL
+  AIR
+  BULK
+}
+
+enum Tier {
+  ECONOMY
+  STANDARD
+  EXPRESS
+}
+
+enum Category {
+  APPEARANCE
+  PRICING
+  CURRENCY
+  INTEGRATION
+  CONTENT
+  DEFAULTS
+}
+
+enum PortType {
+  SEA
+  AIR
+  LAND
+}
+
+enum ShipmentStatus {
+  CREATED
+  PICKED_UP
+  IN_TRANSIT
+  CUSTOMS
+  DELIVERED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  DRAFT
+  PENDING
+  ACCEPTED
+  EXPIRED
+  DECLINED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ---------- Auth.js v5 (Prisma adapter) ----------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  phone         String?   @unique
+  phoneVerified Boolean   @default(false)
+  countryCode   String?
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(CLIENT)
+  isActive      Boolean   @default(true)
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  updatedSettings SystemSetting[]
+  assignedTickets Ticket[]
+  notifications Notification[]
+  backups         Backup[]
+  profile       UserProfile?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  country       String?
+  originCountry String?
+  city          String?
+  address       String?
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- Master data ----------
+
+model Port {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  type      PortType @default(SEA)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  country   Country? @relation(fields: [countryId], references: [id])
+  countryId String?
+
+  ratesFrom        ShippingRate[] @relation("RatesFrom")
+  ratesTo          ShippingRate[] @relation("RatesTo")
+  quotesFrom       Quote[]        @relation("QuoteFrom")
+  quotesTo         Quote[]        @relation("QuoteTo")
+  shipmentsFrom    Shipment[]     @relation("ShipmentFrom")
+  shipmentsTo      Shipment[]     @relation("ShipmentTo")
+  rulesFrom        PricingRule[]  @relation("RuleFrom")
+  rulesTo          PricingRule[]  @relation("RuleTo")
+  voyagesOrigin    Voyage[]       @relation("VoyageOrigin")
+  voyagesDestination Voyage[]    @relation("VoyageDestination")
+
+  @@index([countryId])
+}
+
+model Carrier {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  shipments Shipment[]
+}
+
+model ContainerType {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  name          String
+  teu           Float   @default(1)
+  isActive      Boolean @default(true)
+  shippingRates ShippingRate[]
+  quotes        Quote[]
+  shipments     Shipment[]
+  pricingRules  PricingRule[]
+}
+
+// ---------- Pricing ----------
+
+model ShippingRate {
+  id                String   @id @default(cuid())
+  originPortId      String
+  destinationPortId String
+  mode              Mode
+  containerTypeId    String?
+  voyageId           String?
+  freeTimeDays       Int?
+  tier               Tier
+  baseCost          Decimal  @db.Decimal(12, 2)
+  validFrom         DateTime @default(now())
+  validUntil        DateTime?
+  isActive          Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+
+  dgSurcharge     Decimal? @default(150) @db.Decimal(10, 2)
+  dgMultiplier    Float?   @default(1.25)
+  reeferSurcharge Decimal? @default(200) @db.Decimal(10, 2)
+
+  originPort      Port           @relation("RatesFrom", fields: [originPortId], references: [id])
+  destinationPort Port           @relation("RatesTo", fields: [destinationPortId], references: [id])
+  containerType   ContainerType? @relation(fields: [containerTypeId], references: [id])
+  voyage          Voyage?        @relation(fields: [voyageId], references: [id], onDelete: SetNull)
+
+  @@index([originPortId, destinationPortId, mode, isActive])
+}
+
+model ExchangeRate {
+  currency    String   @id
+  rate        Decimal  @db.Decimal(14, 6)
+  buyRate     Decimal? @db.Decimal(14, 6)
+  sellRate    Decimal? @db.Decimal(14, 6)
+  autoUpdate  Boolean  @default(false)
+  lastUpdated DateTime @default(now())
+}
+
+// ---------- Master data: Countries & Currencies (feature 6/7) ----------
+
+model Country {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  dialCode  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  ports Port[]
+
+  @@index([name])
+}
+
+model Currency {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  symbol    String
+  rate      Decimal  @db.Decimal(14, 6)
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Smart field engine & pricing engine (features 4/5/9) ----------
+
+model FieldDefinition {
+  id           String   @id @default(cuid())
+  key          String   @unique
+  label        String
+  type         String   @default("number")
+  appliesTo    String   @default("ALL")
+  icon         String?
+  unit         String?
+  defaultValue Decimal? @db.Decimal(14, 2)
+  isEnabled    Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  ruleFields PricingRuleField[]
+}
+
+model PricingRule {
+  id                String   @id @default(cuid())
+  name              String
+  originPortId      String?
+  destinationPortId String?
+  mode              Mode?
+  containerTypeId   String?
+  minWeightKg       Decimal? @db.Decimal(14, 2)
+  maxWeightKg       Decimal? @db.Decimal(14, 2)
+  priority          Int      @default(100)
+  baseRate          Decimal  @db.Decimal(14, 2)
+  weightRate        Decimal? @db.Decimal(14, 2)
+  fobExwType        String?
+  fobExwRate        Decimal? @db.Decimal(14, 2)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  originPort      Port?           @relation("RuleFrom", fields: [originPortId], references: [id])
+  destinationPort Port?           @relation("RuleTo", fields: [destinationPortId], references: [id])
+  containerType   ContainerType?  @relation(fields: [containerTypeId], references: [id])
+  fields          PricingRuleField[]
+  alerts          SystemAlert[]
+
+  @@index([originPortId, destinationPortId, mode, isActive])
+}
+
+model PricingRuleField {
+  id        String    @id @default(cuid())
+  ruleId    String
+  fieldId   String
+  value     Decimal?  @db.Decimal(14, 2)
+  isEnabled Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  rule  PricingRule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  field FieldDefinition @relation(fields: [fieldId], references: [id])
+
+  @@unique([ruleId, fieldId])
+  @@index([fieldId])
+}
+
+model SystemAlert {
+  id         String    @id @default(cuid())
+  ruleId     String?
+  level      String    @default("MEDIUM")
+  title      String
+  message    String
+  impact     Json?
+  isResolved Boolean   @default(false)
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  rule PricingRule? @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([isResolved])
+  @@index([createdAt])
+}
+
+// ---------- Business ----------
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  company   String?
+  email     String?
+  phone     String?
+  taxId     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotes    Quote[]
+  shipments Shipment[]
+  invoices  Invoice[]
+
+  @@index([name])
+}
+
+model Quote {
+  id                 String      @id @default(cuid())
+  quoteNumber        String      @unique
+  customerId         String?
+  mode               Mode
+  originPortId       String?
+  destinationPortId  String?
+  containerTypeId    String?
+  voyageId           String?
+  freeTimeDays       Int?
+  tier               Tier
+  cargo              Json?
+  baseCost           Decimal?    @db.Decimal(12, 2)
+  surcharges         Json?
+  total              Decimal     @db.Decimal(12, 2)
+  currency           String      @default("SAR")
+  status             QuoteStatus @default(DRAFT)
+  validUntil         DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  equipmentType   String?  @default("Dry")
+  equipmentSizes  String[] @default(["20GP"])
+  commodity       String?
+  hsCode          String?
+  isFAK           Boolean  @default(true)
+  cargoWeight     Decimal? @default(18000) @db.Decimal(10, 2)
+  weightUnit      String?  @default("KGS")
+  temperature     Decimal? @default(0) @db.Decimal(5, 2)
+  tempUnit        String?  @default("C")
+  originCountry   String?  @default("SA")
+  destinationCountry String? @default("YE")
+  originPortCode  String?
+  destPortCode    String?
+  isDG            Boolean  @default(false)
+  dgClass         String?
+  unNumber        String?
+  dgSurcharge     Decimal? @default(0) @db.Decimal(10, 2)
+
+  customer         Customer?      @relation(fields: [customerId], references: [id])
+  originPort       Port?          @relation("QuoteFrom", fields: [originPortId], references: [id])
+  destinationPort  Port?          @relation("QuoteTo", fields: [destinationPortId], references: [id])
+  containerType    ContainerType? @relation(fields: [containerTypeId], references: [id])
+  voyage           Voyage?        @relation(fields: [voyageId], references: [id])
+  shipment         Shipment?
+  invoice          Invoice?
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  customerId    String
+  shipmentId    String?       @unique
+  quoteId       String?       @unique
+  status        InvoiceStatus @default(DRAFT)
+  subtotal      Decimal?      @db.Decimal(12, 2)
+  taxes         Decimal?      @db.Decimal(12, 2)
+  total         Decimal       @db.Decimal(12, 2)
+  currency      String        @default("SAR")
+  items         Json?
+  notes         String?
+  dueDate       DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  customer  Customer  @relation(fields: [customerId], references: [id])
+  shipment  Shipment? @relation(fields: [shipmentId], references: [id])
+  quote     Quote?    @relation(fields: [quoteId], references: [id])
+
+  @@index([customerId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Shipment {
+  id                 String        @id @default(cuid())
+  shipmentNumber     String        @unique
+  customerId         String
+  mode               Mode
+  originPortId       String
+  destinationPortId  String
+  containerTypeId    String?
+  tier               Tier
+  status             ShipmentStatus @default(CREATED)
+  totalCost          Decimal?      @db.Decimal(12, 2)
+  currency           String        @default("SAR")
+  eta                DateTime?
+  carrierId          String?
+  trackingNumber     String?
+  trackingProvider   String?       @default("ship24")
+  lastTrackedAt      DateTime?
+  externalStatus     String?
+  quoteId            String?       @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  customer         Customer       @relation(fields: [customerId], references: [id])
+  originPort       Port           @relation("ShipmentFrom", fields: [originPortId], references: [id])
+  destinationPort  Port           @relation("ShipmentTo", fields: [destinationPortId], references: [id])
+  containerType    ContainerType? @relation(fields: [containerTypeId], references: [id])
+  carrier          Carrier?       @relation(fields: [carrierId], references: [id])
+  quote            Quote?         @relation(fields: [quoteId], references: [id])
+  invoice          Invoice?
+  events           ShipmentEvent[]
+
+  @@index([customerId, status])
+  @@index([status])
+  @@index([trackingNumber])
+}
+
+model ShipmentEvent {
+  id         String        @id @default(cuid())
+  shipmentId String
+  status     ShipmentStatus
+  location   String?
+  note       String?
+  occurredAt DateTime      @default(now())
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, occurredAt])
+}
+
+// ---------- Voyage management ----------
+
+model Voyage {
+  id               String   @id @default(cuid())
+  originPortId     String
+  destinationPortId String
+  vesselName       String
+  voyageNumber     String   @unique
+  departureDate    DateTime
+  cutOffDate       DateTime
+  arrivalDate      DateTime
+  voyageType       String   @default("direct")
+  transitTime      Int
+  shippingLine     String
+  isActive         Boolean  @default(true)
+  showOnCalculator Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  createdBy        String
+
+  originPort      Port  @relation("VoyageOrigin", fields: [originPortId], references: [id])
+  destinationPort Port  @relation("VoyageDestination", fields: [destinationPortId], references: [id])
+  quotes          Quote[]
+  shippingRates   ShippingRate[]
+
+  @@index([originPortId, destinationPortId, departureDate])
+}
+
+// ---------- Config (zero hardcode) ----------
+
+model SystemSetting {
+  key         String    @id
+  value       Json
+  category    Category
+  description String?
+  updatedById String?
+  updatedAt   DateTime  @updatedAt
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  @@index([category])
+}
+
+model RegistrationPageConfig {
+  id                       String   @id @default(cuid())
+  pageTitleAr              String
+  pageTitleEn              String
+  pageSubtitleAr           String?
+  pageSubtitleEn           String?
+  submitButtonAr           String
+  submitButtonEn           String
+  successToastAr           String?
+  successToastEn           String?
+  errorGeneralAr           String?
+  errorGeneralEn           String?
+  footerLoginTextAr        String?
+  footerLoginTextEn        String?
+  alreadyHaveAccountAr     String?
+  alreadyHaveAccountEn     String?
+  isActive                 Boolean  @default(true)
+  updatedAt                DateTime @updatedAt
+}
+
+model RegistrationFieldConfig {
+  id                String   @id @default(cuid())
+  fieldKey          String   @unique
+  labelAr           String
+  labelEn           String
+  placeholderAr     String?
+  placeholderEn     String?
+  helpTextAr        String?
+  helpTextEn        String?
+  tooltipAr         String?
+  tooltipEn         String?
+  errorRequiredAr   String?
+  errorRequiredEn   String?
+  errorInvalidAr    String?
+  errorInvalidEn    String?
+  validationRegex   String?
+  minLength         Int?
+  maxLength         Int?
+  allowNumbers      Boolean  @default(true)
+  allowSpecialChars Boolean  @default(true)
+  isActive          Boolean  @default(true)
+  isVisible         Boolean  @default(true)
+  isRequired        Boolean  @default(true)
+  order             Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actorRole String?
+  action    String
+  target    String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([createdAt])
+}
+
+// ---------- Landing / Marketing content (zero hardcode) ----------
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String
+  logoUrl   String?
+  website   String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  company   String?
+  content   String
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ---------- Unified CMS: Page → Section → Item (page builder) ----------
+
+model CmsPage {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  titleAr   String
+  titleEn   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections CmsSection[]
+
+  @@index([slug, isActive])
+}
+
+model CmsSection {
+  id         String   @id @default(cuid())
+  pageId     String
+  key        String
+  type       String   @default("generic")
+  badgeAr    String?
+  badgeEn    String?
+  titleAr    String?
+  titleEn    String?
+  subtitleAr String?  @db.Text
+  subtitleEn String?  @db.Text
+  contentAr  String?  @db.Text
+  contentEn  String?  @db.Text
+  imageUrl   String?
+  isActive   Boolean  @default(true)
+  isVisible  Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  page  CmsPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  items CmsItem[]
+
+  @@unique([pageId, key])
+  @@index([pageId, order])
+}
+
+model CmsItem {
+  id            String   @id @default(cuid())
+  sectionId     String
+  slug          String
+  icon          String   @default("package")
+  titleAr       String
+  titleEn       String
+  shortLabelAr  String?
+  shortLabelEn  String?
+  descriptionAr String?  @db.Text
+  descriptionEn String?  @db.Text
+  value         String?
+  subValue      String?
+  imageUrl      String?
+  linkUrl       String?
+  isActive      Boolean  @default(true)
+  isVisible     Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  section CmsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, slug])
+  @@index([sectionId, order])
+}
+
+// ---------- Support / Ticket system (Contact → Ticket) ----------
+
+model Ticket {
+  id            String        @id @default(cuid())
+  number        String        @unique
+  customerName  String
+  customerEmail String?
+  customerPhone String?
+  subject       String
+  message       String
+  status        TicketStatus  @default(OPEN)
+  priority      TicketPriority @default(NORMAL)
+  assigneeId    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  assignee User?          @relation(fields: [assigneeId], references: [id])
+  messages TicketMessage[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model TicketMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  authorName String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+}
+
+// ---------- Notifications & alerts ----------
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String?
+  title     String
+  body      String
+  type      String    @default("info")
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+// ---------- Smart OTP (Provider pattern) ----------
+
+model OtpVerification {
+  id         String    @id @default(cuid())
+  identifier String
+  channel    String    @default("email")
+  code       String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([identifier, channel])
+}
+
+// ---------- Backups (point 7) ----------
+
+model Backup {
+  id           String   @id @default(cuid())
+  filename     String
+  kind         String   @default("manual")
+  scope        String   @default("settings")
+  sizeBytes    Int      @default(0)
+  guideVersion String?
+  data         Json
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id])
+
+  @@index([createdAt])
+}
+
+// ---------- Rate limiting (calculator & tracking) ----------
+
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  scope     String
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([scope, key, createdAt])
+}
+
+// ---------- Company Info & Document Builder ----------
+
+model CompanyInfo {
+  id                   String   @id @default(cuid())
+  name                 String   @default("ALOLA LOGISTICS")
+  nameAr               String?  @default("ألولا للخدمات اللوجستية")
+  logoUrl              String?
+  logoForPdfUrl        String?
+  address              String?
+  addressAr            String?
+  city                 String?
+  country              String?
+  phone                String?
+  phone2               String?
+  email                String?
+  website              String?
+  taxNumber            String?
+  commercialReg        String?
+  headerShowLogo       Boolean  @default(true)
+  headerShowCompanyName Boolean @default(true)
+  headerShowAddress    Boolean  @default(true)
+  headerShowPhone      Boolean  @default(true)
+  headerShowEmail      Boolean  @default(true)
+  headerShowWebsite    Boolean  @default(false)
+  footerShowTerms      Boolean  @default(true)
+  footerShowBankInfo   Boolean  @default(false)
+  footerShowSignature  Boolean  @default(true)
+  footerShowPageNumber Boolean  @default(true)
+  footerTermsText      String?  @db.Text
+  footerTermsTextAr    String?  @db.Text
+  bankInfo             Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model DocumentTemplate {
+  id             String   @id @default(cuid())
+  type           String   @unique
+  name           String
+  nameAr         String?
+  isActive       Boolean  @default(true)
+  headerSettings Json     @default("{}")
+  footerSettings Json     @default("{}")
+  bodySettings   Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ---------- Website Builder ----------
+
+model WebsitePage {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  titleAr        String?
+  isActive       Boolean  @default(true)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sections WebsiteSection[]
+}
+
+model WebsiteSection {
+  id        String   @id @default(cuid())
+  pageId    String
+  type      String
+  order     Int
+  isVisible Boolean  @default(true)
+  data      Json?
+  createdAt DateTime @default(now())
+
+  page WebsitePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
