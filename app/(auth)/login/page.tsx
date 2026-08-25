@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { getAllSettings } from "@/lib/settings";
 import { getString, toSettingMap } from "@/lib/theme";
 import { LoginForm } from "@/components/auth/login-form";
