@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { audit } from "@/lib/log";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 function isOps(role?: string | null) {
   return role === "SUPER_ADMIN" || role === "MANAGER";

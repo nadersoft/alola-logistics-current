@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { logger } from "@/lib/log";
 
 export type WebsiteContentResult = { ok: boolean; error?: string };

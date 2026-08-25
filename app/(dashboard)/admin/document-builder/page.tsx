@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { getCompanyInfoSafe } from "@/lib/actions/company-info";
 import { getDocumentTemplates } from "@/lib/actions/doc-templates";
 import { DocumentBuilder } from "@/components/admin/document-builder";

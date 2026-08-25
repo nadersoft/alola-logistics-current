@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { InvoiceStatus, ShipmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { audit } from "@/lib/log";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { toNumber } from "@/lib/format";
 import { sendAlert, notifyCustomerByEmail, notifyOps } from "@/lib/notify";
 

@@ -1,7 +1,7 @@
 "use server";
 import { revalidateTag } from "next/cache";
 import { Category } from "@prisma/client";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { setSetting, encryptSecret } from "@/lib/settings";
 import { INTEGRATION_KEYS, type IntegrationKeyId } from "@/lib/integration-keys";
 import { getMapboxToken, getShip24Key, getTwilioCreds, getWhatsAppKey, type IntegrationSource } from "@/lib/integrations";
