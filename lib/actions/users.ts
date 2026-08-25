@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 function isOps(role?: string | null) {
   return role === "SUPER_ADMIN" || role === "MANAGER";
