@@ -61,7 +61,8 @@ export function WebsiteBuilder({
   function onSavePartner(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    fd.set("isActive", String(partnerActive));
+    if (ci?.logoForPdfUrl) images.logo = normalizeLogoUrl(ci.logoForPdfUrl) ?? "";
+    //fd.set("isActive", String(partnerActive));
     //fd.set("logoUrl", normalizeLogoUrl(partnerLogoUrl));
     fd.set("logoUrl", normalizeLogoUrl(partnerLogoUrl) ?? "");
     run(upsertPartner(fd), partnerDialog.editing ? "Partner updated" : "Partner added");
