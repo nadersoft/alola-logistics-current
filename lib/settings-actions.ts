@@ -1,7 +1,7 @@
 "use server";
 
 import { Category } from "@prisma/client";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { setSetting } from "@/lib/settings";
 import { revalidatePath } from "next/cache";
 
