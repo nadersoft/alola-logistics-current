@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { getPartners, getTestimonials, getFaqs } from "@/lib/actions/website-content";
 import { WebsiteBuilder } from "@/components/admin/website-builder";
 
