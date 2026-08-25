@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+
 export type AccessScope = {
   ops: boolean;
   customerId: string | null;
