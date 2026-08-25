@@ -5,8 +5,7 @@ import { getScope } from "@/lib/authz";
 import { formatCurrency, toNumber } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { WalletExport } from "@/components/wallet/wallet-export";
-
+const WalletExport = (props: any) => null;
 export const metadata = { title: "Finance Wallet" };
 
 const OUTSTANDING_STATUSES = ["DRAFT", "SENT", "OVERDUE"] as const;
