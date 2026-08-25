@@ -61,7 +61,11 @@ function buildDoc(data: InvoicePdfData) {
   const showBank = ci?.footerShowBankInfo ?? false;
   const bankInfo = ci?.bankInfo && typeof ci.bankInfo === "object" ? ci.bankInfo as Record<string, string> : null;
   const images: Record<string, string> = {};
-  if (ci?.logoForPdfUrl) images.logo = normalizeLogoUrl(ci.logoForPdfUrl);
+  if (ci?.logoForPdfUrl) {
+  const u = normalizeLogoUrl(ci.logoForPdfUrl);
+  if (u) images.logo = u;
+}
+  //if (ci?.logoForPdfUrl) images.logo = normalizeLogoUrl(ci.logoForPdfUrl);
 
   return {
     images,
