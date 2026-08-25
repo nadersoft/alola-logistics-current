@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { getPageBySlug, getCmsPages } from "@/lib/actions/cms";
 import { CmsBuilder } from "@/components/admin/cms-builder";
 
