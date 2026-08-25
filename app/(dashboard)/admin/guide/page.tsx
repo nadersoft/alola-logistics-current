@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import fs from "fs";
 import path from "path";
 import { Role, Category } from "@prisma/client";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAllSettings } from "@/lib/settings";
 import { getString, toSettingMap } from "@/lib/theme";
