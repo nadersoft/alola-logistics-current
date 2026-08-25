@@ -17,8 +17,16 @@ export type FloatingActionsProps = {
   color: string;
 };
 
+
+
+
 const WHATSAPP_GREEN = "#25d366";
-const HIDDEN_ROLES = ["CLIENT", "SUPPORT", "USER"];
+const HIDDEN_ROLES = ["ADMIN", "MANAGER", "OWNER", "SUPER_ADMIN", "SUPPORT", "STAFF"];
+
+
+
+
+
 
 export function FloatingActions({
   enabled,
