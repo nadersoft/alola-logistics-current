@@ -71,7 +71,7 @@
     "seed": "tsx prisma/seed.ts"
   }
 
-  ,
+  
   "pnpm": {
     "onlyBuiltDependencies": [
       "@prisma/client",
