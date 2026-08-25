@@ -44,7 +44,7 @@ export function FloatingActions({
   const { data: session } = useSession();
   const role = ((session?.user as Record<string, unknown>)?.role as string || "").toUpperCase();
   if (HIDDEN_ROLES.includes(role)) return null;
-  //if (role && !["ADMIN", "MANAGER", "OWNER", "SUPER_ADMIN"].includes(role)) return null;
+ 
   const side = position === "left" ? "left-4" : "right-4";
   const base =
     "flex size-14 items-center justify-center rounded-full text-white shadow-xl transition-colors";
