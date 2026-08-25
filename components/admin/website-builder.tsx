@@ -61,7 +61,7 @@ export function WebsiteBuilder({
   function onSavePartner(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const fd = new FormData(e.currentTarget);
+  
 fd.set("logoUrl", normalizeLogoUrl(partnerLogoUrl) ?? "");
     //if (ci?.logoForPdfUrl) images.logo = normalizeLogoUrl(ci.logoForPdfUrl) ?? "";
     //fd.set("isActive", String(partnerActive));
