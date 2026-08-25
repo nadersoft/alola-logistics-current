@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2Icon, DownloadIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
-import { normalizeLogoUrl } from "@/lib/utils/logo-helpers";
+import { normalizeLogoUrl } from "@/lib/logo-helpers";
 
 export type QuotePdfSurcharge = { label: string; amount: number };
 
