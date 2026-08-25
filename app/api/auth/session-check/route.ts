@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
 
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 days (must match auth.ts)
 
