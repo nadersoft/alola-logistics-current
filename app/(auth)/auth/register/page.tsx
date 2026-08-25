@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-//import { auth } from "@/auth";
+//import { auth } from "@/lib/auth";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getAllSettings } from "@/lib/settings";
 import { getString, toSettingMap } from "@/lib/theme";
